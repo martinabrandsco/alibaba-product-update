@@ -381,6 +381,15 @@ def download_file(file_type):
         flash('File not found')
         return redirect(url_for('index'))
 
+@app.route('/health')
+def health():
+    """Health check endpoint for Railway"""
+    return jsonify({
+        "status": "healthy",
+        "timestamp": datetime.now().isoformat(),
+        "platform": "railway"
+    })
+
 @app.route('/api/status')
 def api_status():
     """API endpoint to check system status"""
