@@ -62,9 +62,9 @@ function setupFileUpload() {
             return false;
         }
 
-        // Validate file size (10MB limit)
-        if (file.size > 10 * 1024 * 1024) {
-            showFlashMessage(`File size must be less than 10MB for ${type}.`, 'error');
+        // Validate file size (50MB limit)
+        if (file.size > 50 * 1024 * 1024) {
+            showFlashMessage(`File size must be less than 50MB for ${type}.`, 'error');
             return false;
         }
 

@@ -5,6 +5,7 @@ A modern web app for updating product status based on inventory levels
 """
 
 from flask import Flask, render_template, request, send_file, jsonify, flash, redirect, url_for
+from werkzeug.exceptions import RequestEntityTooLarge
 import pandas as pd
 import os
 import glob
@@ -16,6 +17,9 @@ from openpyxl import load_workbook
 
 app = Flask(__name__)
 app.secret_key = 'ragatex_product_update_secret_key_2024'
+
+# Configure maximum file size (50MB)
+app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB in bytes
 
 # Configuration
 UPLOAD_FOLDER = 'uploads'
@@ -418,7 +422,11 @@ def api_status():
     }
     return jsonify(status)
 
-
+@app.errorhandler(RequestEntityTooLarge)
+def handle_file_too_large(e):
+    """Handle file size limit exceeded error"""
+    flash('File size too large. Maximum file size is 50MB per file.')
+    return redirect(url_for('index'))
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5001)
