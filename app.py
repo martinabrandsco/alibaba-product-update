@@ -40,6 +40,11 @@ def find_most_recent_status_file():
     files = glob.glob(pattern1) + glob.glob(pattern2)
     
     if not files:
+        # If no generated files found, use sample file as fallback
+        sample_file = os.path.join(PRODUCT_STATUS_UPDATES_FOLDER, "sample-product-status.csv")
+        if os.path.exists(sample_file):
+            print(f"No generated files found, using sample file: {sample_file}")
+            return sample_file
         return None
     
     # Sort by modification time (most recent first)
@@ -283,7 +288,7 @@ def upload_file():
             most_recent_file = find_most_recent_status_file()
             if not most_recent_file:
                 print("No product status update files found")  # Debug
-                flash('No product status update files found')
+                flash('No product status update files found. Please ensure sample-product-status.csv exists in the product_status_updates folder.')
                 return redirect(url_for('index'))
             
             print(f"Most recent file: {most_recent_file}")  # Debug
