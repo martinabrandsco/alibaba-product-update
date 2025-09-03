@@ -70,7 +70,6 @@ uploads/*
 # Generated product status files (keep structure but ignore content)
 product_status_updates/*
 !product_status_updates/.gitkeep
-!product_status_updates/sample-*.csv
 
 # Test files
 test_*.csv

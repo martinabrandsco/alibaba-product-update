@@ -40,11 +40,6 @@ def find_most_recent_status_file():
     files = glob.glob(pattern1) + glob.glob(pattern2)
     
     if not files:
-        # If no generated files found, use sample file as fallback
-        sample_file = os.path.join(PRODUCT_STATUS_UPDATES_FOLDER, "sample-product-status.csv")
-        if os.path.exists(sample_file):
-            print(f"No generated files found, using sample file: {sample_file}")
-            return sample_file
         return None
     
     # Sort by modification time (most recent first)
@@ -423,8 +418,7 @@ def api_status():
     }
     return jsonify(status)
 
-# For Vercel deployment
-app.wsgi_app = app.wsgi_app
+
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5001)
