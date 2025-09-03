@@ -2,22 +2,22 @@
   "version": 2,
   "builds": [
     {
-      "src": "api/index.py",
+      "src": "api/test_simple.py",
       "use": "@vercel/python"
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "api/index.py"
+      "dest": "api/test_simple.py"
     }
   ],
   "env": {
     "FLASK_ENV": "production"
   },
   "functions": {
-    "api/index.py": {
-      "maxDuration": 30
+    "api/test_simple.py": {
+      "maxDuration": 10
     }
   }
 }
