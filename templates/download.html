@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download Files - Ragatex Product Update</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📊 Ragatex Product Update</h1>
+            <p>Your files are ready for download!</p>
+        </header>
+
+        <main>
+            <div class="download-section">
+                <h2>📁 Download Your Files</h2>
+                <p>Your CSV file has been processed successfully. You can now download the generated Excel files:</p>
+                
+                <div class="download-buttons">
+                    <div class="download-item">
+                        <h3>📋 Product Status Update</h3>
+                        <p>Main product status update file with Active/Inactive status based on inventory levels.</p>
+                        <a href="{{ url_for('download_file', file_type='main') }}" class="btn btn-primary">
+                            📥 Download Product Status File
+                        </a>
+                    </div>
+                    
+                    <div class="download-item">
+                        <h3>💰 Price Template</h3>
+                        <p>Price template file with Product IDs, inventory, and prices for items with inventory > 0.</p>
+                        <a href="{{ url_for('download_file', file_type='price_template') }}" class="btn btn-secondary">
+                            📥 Download Price Template File
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="actions">
+                    <a href="{{ url_for('index') }}" class="btn btn-outline">
+                        🔄 Process Another File
+                    </a>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; 2024 Ragatex Product Update Tool</p>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <script>
+        // Add click handlers for download buttons to provide feedback
+        document.addEventListener('DOMContentLoaded', function() {
+            const downloadButtons = document.querySelectorAll('.download-item a');
+            
+            downloadButtons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    // Add loading state
+                    const originalText = this.innerHTML;
+                    this.innerHTML = '⏳ Downloading...';
+                    this.style.pointerEvents = 'none';
+                    
+                    // Reset after a delay
+                    setTimeout(() => {
+                        this.innerHTML = originalText;
+                        this.style.pointerEvents = 'auto';
+                    }, 3000);
+                });
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,2 @@
+# This file ensures the product_status_updates directory is tracked by Git
+# The actual generated files are ignored by .gitignore
