@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Ragatex Product Update Web Application
+Ragatex Product Update Web Application - Vercel Compatible Version
 A modern web app for updating product status based on inventory levels
 """
 
@@ -13,14 +13,16 @@ import shutil
 from werkzeug.utils import secure_filename
 import tempfile
 from openpyxl import load_workbook
+import base64
+import io
 
 app = Flask(__name__)
 app.secret_key = 'ragatex_product_update_secret_key_2024'
 
-# Configuration
-UPLOAD_FOLDER = 'uploads'
+# Configuration for Vercel
+UPLOAD_FOLDER = '/tmp/uploads'
 ALLOWED_EXTENSIONS = {'csv'}
-PRODUCT_STATUS_UPDATES_FOLDER = 'product_status_updates'
+PRODUCT_STATUS_UPDATES_FOLDER = '/tmp/product_status_updates'
 VLOOKUP_FILE = 'vlookup_analysis_results.csv'
 TEMPLATE_FILE = 'simple-price-template(1).xlsx'
 
@@ -103,27 +105,21 @@ def vlookup_spu_to_product_ids(spu_ids):
             else:
                 results[spu_id] = None
         
-        print(f"Vlookup results: {results}")  # Debug
         return results, None
         
     except Exception as e:
-        print(f"Vlookup error: {str(e)}")  # Debug
         return None, f"Error in vlookup: {str(e)}"
 
 def update_product_status_file(source_file, target_file, spu_inventory_data, spu_to_product_mapping):
     """Update the product status file based on inventory data"""
     try:
-        print(f"Reading source file: {source_file}")  # Debug
-        
         # Try to read with semicolon first, then comma if that fails
         delimiter = ';'
         try:
             df = pd.read_csv(source_file, sep=';', dtype=str)
-            print(f"Source file loaded with semicolon delimiter. Shape: {df.shape}, Columns: {list(df.columns)}")  # Debug
         except:
             df = pd.read_csv(source_file, sep=',', dtype=str)
             delimiter = ','
-            print(f"Source file loaded with comma delimiter. Shape: {df.shape}, Columns: {list(df.columns)}")  # Debug
         
         # Create a mapping from Product ID to inventory status
         product_to_status = {}
@@ -132,14 +128,10 @@ def update_product_status_file(source_file, target_file, spu_inventory_data, spu
                 product_id = spu_to_product_mapping[spu_id]
                 status = "Inactive" if inventory == 0 else "Active"
                 product_to_status[product_id] = status
-                print(f"Mapping: SPU {spu_id} -> Product {product_id} -> Status {status} (inventory: {inventory})")  # Debug
-        
-        print(f"Product to status mapping: {product_to_status}")  # Debug
         
         # Update the status column (third column, index 2)
         status_column = df.columns[2]
         product_id_column = df.columns[0]
-        print(f"Status column: {status_column}, Product ID column: {product_id_column}")  # Debug
         
         # Update status for matching Product IDs
         updates_made = 0
@@ -151,23 +143,16 @@ def update_product_status_file(source_file, target_file, spu_inventory_data, spu
                     new_status = product_to_status[product_id]
                     df.at[idx, status_column] = new_status
                     updates_made += 1
-                    print(f"Updated row {idx}: Product {product_id} from '{old_status}' to '{new_status}'")  # Debug
-        
-        print(f"Total updates made: {updates_made}")  # Debug
         
         # Clean up column headers - replace "Unnamed: 1" and "Unnamed: 2" with blank strings
         df.columns = [col if not col.startswith('Unnamed:') else '' for col in df.columns]
         
         # Save the updated file with the same delimiter
         df.to_csv(target_file, sep=delimiter, index=False, encoding='utf-8')
-        print(f"Updated file saved to: {target_file}")  # Debug
         
         return True, None
         
     except Exception as e:
-        print(f"Error in update_product_status_file: {str(e)}")  # Debug
-        import traceback
-        traceback.print_exc()  # Debug
         return False, f"Error updating file: {str(e)}"
 
 def create_price_template_excel(spu_inventory_data, spu_to_product_mapping):
@@ -219,9 +204,6 @@ def create_price_template_excel(spu_inventory_data, spu_to_product_mapping):
         return temp_path, None
         
     except Exception as e:
-        print(f"Error creating price template Excel: {str(e)}")
-        import traceback
-        traceback.print_exc()
         return None, f"Error creating price template Excel: {str(e)}"
 
 @app.route('/')
@@ -247,16 +229,11 @@ def upload_file():
         file.save(file_path)
         
         try:
-            print(f"Processing uploaded file: {file_path}")  # Debug
-            
             # Step 1: Process uploaded file
             df, error = process_uploaded_file(file_path)
             if error:
-                print(f"Error processing file: {error}")  # Debug
                 flash(f'Error processing file: {error}')
                 return redirect(url_for('index'))
-            
-            print(f"Uploaded file processed successfully. Columns: {list(df.columns)}")  # Debug
             
             # Step 2: Get SPU IDs and inventory/price data
             spu_inventory_data = {}
@@ -267,34 +244,24 @@ def upload_file():
                     'price': row['price']
                 }
             spu_ids = list(spu_inventory_data.keys())
-            print(f"SPU IDs found: {spu_ids}")  # Debug
-            print(f"Inventory data: {spu_inventory_data}")  # Debug
             
             # Step 3: Vlookup SPU IDs to Product IDs
             spu_to_product_mapping, error = vlookup_spu_to_product_ids(spu_ids)
             if error:
-                print(f"Vlookup error: {error}")  # Debug
                 flash(f'Error in vlookup: {error}')
                 return redirect(url_for('index'))
-            
-            print(f"SPU to Product mapping: {spu_to_product_mapping}")  # Debug
             
             # Step 4: Find most recent status file
             most_recent_file = find_most_recent_status_file()
             if not most_recent_file:
-                print("No product status update files found")  # Debug
                 flash('No product status update files found')
                 return redirect(url_for('index'))
-            
-            print(f"Most recent file: {most_recent_file}")  # Debug
             
             # Step 5: Create today's filename and copy file
             today_filename = create_today_filename(most_recent_file)
             today_file_path = os.path.join(PRODUCT_STATUS_UPDATES_FOLDER, today_filename)
-            print(f"Creating new file: {today_file_path}")  # Debug
             
             shutil.copy2(most_recent_file, today_file_path)
-            print(f"File copied successfully")  # Debug
             
             # Step 6: Update the file with new status
             # Create inventory-only data for the existing functionality
@@ -307,16 +274,12 @@ def upload_file():
             )
             
             if not success:
-                print(f"Error updating file: {error}")  # Debug
                 flash(f'Error updating file: {error}')
                 return redirect(url_for('index'))
-            
-            print(f"File updated successfully")  # Debug
             
             # Step 7: Prepare Excel file for download (existing functionality)
             excel_filename = f"ragatex_product_update_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
             excel_path = os.path.join(UPLOAD_FOLDER, excel_filename)
-            print(f"Creating Excel file: {excel_path}")  # Debug
             
             # Convert CSV to Excel - detect delimiter first
             try:
@@ -324,16 +287,12 @@ def upload_file():
             except:
                 df_excel = pd.read_csv(today_file_path, sep=',')
             df_excel.to_excel(excel_path, index=False, engine='openpyxl')
-            print(f"Excel file created successfully")  # Debug
             
             # Step 8: Create price template Excel file
             price_template_path, error = create_price_template_excel(spu_inventory_data, spu_to_product_mapping)
             if error:
-                print(f"Error creating price template: {error}")  # Debug
                 # Continue with just the main file if price template fails
                 price_template_path = None
-            else:
-                print(f"Price template Excel created successfully: {price_template_path}")  # Debug
             
             # Clean up uploaded file
             os.remove(file_path)
@@ -350,9 +309,6 @@ def upload_file():
             return render_template('download.html')
             
         except Exception as e:
-            print(f"Unexpected error: {str(e)}")  # Debug
-            import traceback
-            traceback.print_exc()  # Debug
             # Clean up uploaded file if it exists
             if os.path.exists(file_path):
                 os.remove(file_path)
