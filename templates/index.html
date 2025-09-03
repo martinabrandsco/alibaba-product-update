@@ -38,27 +38,47 @@
                     </div>
                     
                     <form id="uploadForm" action="/upload" method="post" enctype="multipart/form-data" class="upload-form">
-                        <div class="file-input-container">
-                            <input type="file" id="fileInput" name="file" accept=".csv" required>
-                            <label for="fileInput" class="file-input-label">
-                                <i class="fas fa-file-csv"></i>
-                                <span class="file-input-text">Choose CSV File</span>
-                                <span class="file-input-hint">or drag and drop here</span>
-                            </label>
+                        <!-- Step 1: Inventory Data -->
+                        <div class="upload-step">
+                            <h3>📊 Step 1: Upload Your Inventory Data</h3>
+                            <p>Upload your CSV file with SPU ID, price, and inventory data</p>
+                            <div class="file-input-container">
+                                <input type="file" id="fileInput1" name="inventory_file" accept=".csv" required>
+                                <label for="fileInput1" class="file-input-label">
+                                    <i class="fas fa-file-csv"></i>
+                                    <span class="file-input-text">Choose Inventory CSV File</span>
+                                    <span class="file-input-hint">or drag and drop here</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Step 2: Product Status Base File -->
+                        <div class="upload-step">
+                            <h3>📋 Step 2: Upload Your Product Status Base File</h3>
+                            <p>Upload your latest product-status.csv file to use as the base</p>
+                            <div class="file-input-container">
+                                <input type="file" id="fileInput2" name="status_file" accept=".csv" required>
+                                <label for="fileInput2" class="file-input-label">
+                                    <i class="fas fa-file-csv"></i>
+                                    <span class="file-input-text">Choose Product Status CSV File</span>
+                                    <span class="file-input-hint">or drag and drop here</span>
+                                </label>
+                            </div>
                         </div>
                         
                         <div class="file-requirements">
                             <h3>File Requirements:</h3>
                             <ul>
-                                <li><i class="fas fa-check"></i> CSV format only</li>
-                                <li><i class="fas fa-check"></i> Required columns: SPU ID, price, inventory</li>
-                                <li><i class="fas fa-check"></i> Maximum file size: 10MB</li>
+                                <li><i class="fas fa-check"></i> Both files must be CSV format</li>
+                                <li><i class="fas fa-check"></i> Inventory file: SPU ID, price, inventory columns</li>
+                                <li><i class="fas fa-check"></i> Status file: Product ID, SPU ID, Status columns</li>
+                                <li><i class="fas fa-check"></i> Maximum file size: 10MB each</li>
                             </ul>
                         </div>
                         
                         <button type="submit" class="upload-btn" id="uploadBtn" disabled>
                             <i class="fas fa-upload"></i>
-                            <span>Process File</span>
+                            <span>Process Both Files</span>
                             <div class="loading-spinner" style="display: none;">
                                 <i class="fas fa-spinner fa-spin"></i>
                             </div>
@@ -76,8 +96,8 @@
                             <i class="fas fa-upload"></i>
                         </div>
                         <div class="step-content">
-                            <h3>1. Upload CSV</h3>
-                            <p>Upload your inventory file with SPU ID, price, and inventory data</p>
+                            <h3>1. Upload Two Files</h3>
+                            <p>Upload your inventory data and your latest product-status base file</p>
                         </div>
                     </div>
                     
@@ -87,7 +107,7 @@
                         </div>
                         <div class="step-content">
                             <h3>2. Vlookup SPU IDs</h3>
-                            <p>System finds corresponding Product IDs for each SPU ID</p>
+                            <p>System finds corresponding Product IDs for each SPU ID from your inventory</p>
                         </div>
                     </div>
                     
@@ -97,7 +117,7 @@
                         </div>
                         <div class="step-content">
                             <h3>3. Update Status</h3>
-                            <p>Product status updated: Active (inventory > 0) or Inactive (inventory = 0)</p>
+                            <p>Product status updated in your base file: Active (inventory > 0) or Inactive (inventory = 0)</p>
                         </div>
                     </div>
                     
@@ -106,8 +126,8 @@
                             <i class="fas fa-download"></i>
                         </div>
                         <div class="step-content">
-                            <h3>4. Download Excel</h3>
-                            <p>Download the updated Excel file with all changes applied</p>
+                            <h3>4. Download Two Excel Files</h3>
+                            <p>Download updated product status file and price template with inventory data</p>
                         </div>
                     </div>
                 </div>

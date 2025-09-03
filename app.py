@@ -236,32 +236,50 @@ def index():
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
-    """Handle file upload and processing"""
-    if 'file' not in request.files:
-        flash('No file selected')
+    """Handle two file uploads and processing"""
+    # Check for inventory file
+    if 'inventory_file' not in request.files:
+        flash('No inventory file selected')
         return redirect(url_for('index'))
     
-    file = request.files['file']
-    if file.filename == '':
-        flash('No file selected')
+    # Check for status file
+    if 'status_file' not in request.files:
+        flash('No product status file selected')
         return redirect(url_for('index'))
     
-    if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
-        file_path = os.path.join(UPLOAD_FOLDER, filename)
-        file.save(file_path)
+    inventory_file = request.files['inventory_file']
+    status_file = request.files['status_file']
+    
+    if inventory_file.filename == '':
+        flash('No inventory file selected')
+        return redirect(url_for('index'))
+    
+    if status_file.filename == '':
+        flash('No product status file selected')
+        return redirect(url_for('index'))
+    
+    if inventory_file and allowed_file(inventory_file.filename) and status_file and allowed_file(status_file.filename):
+        # Save inventory file
+        inventory_filename = secure_filename(inventory_file.filename)
+        inventory_file_path = os.path.join(UPLOAD_FOLDER, inventory_filename)
+        inventory_file.save(inventory_file_path)
+        
+        # Save status file
+        status_filename = secure_filename(status_file.filename)
+        status_file_path = os.path.join(UPLOAD_FOLDER, status_filename)
+        status_file.save(status_file_path)
         
         try:
-            print(f"Processing uploaded file: {file_path}")  # Debug
+            print(f"Processing uploaded files: {inventory_file_path} and {status_file_path}")  # Debug
             
-            # Step 1: Process uploaded file
-            df, error = process_uploaded_file(file_path)
+            # Step 1: Process inventory file
+            df, error = process_uploaded_file(inventory_file_path)
             if error:
-                print(f"Error processing file: {error}")  # Debug
-                flash(f'Error processing file: {error}')
+                print(f"Error processing inventory file: {error}")  # Debug
+                flash(f'Error processing inventory file: {error}')
                 return redirect(url_for('index'))
             
-            print(f"Uploaded file processed successfully. Columns: {list(df.columns)}")  # Debug
+            print(f"Inventory file processed successfully. Columns: {list(df.columns)}")  # Debug
             
             # Step 2: Get SPU IDs and inventory/price data
             spu_inventory_data = {}
@@ -284,28 +302,23 @@ def upload_file():
             
             print(f"SPU to Product mapping: {spu_to_product_mapping}")  # Debug
             
-            # Step 4: Find most recent status file
-            most_recent_file = find_most_recent_status_file()
-            if not most_recent_file:
-                print("No product status update files found")  # Debug
-                flash('No product status update files found. Please ensure sample-product-status.csv exists in the product_status_updates folder.')
-                return redirect(url_for('index'))
-            
-            print(f"Most recent file: {most_recent_file}")  # Debug
+            # Step 4: Use uploaded status file as base
+            base_status_file = status_file_path
+            print(f"Using uploaded status file as base: {base_status_file}")  # Debug
             
             # Step 5: Create today's filename and copy file
-            today_filename = create_today_filename(most_recent_file)
+            today_filename = create_today_filename(base_status_file)
             today_file_path = os.path.join(PRODUCT_STATUS_UPDATES_FOLDER, today_filename)
             print(f"Creating new file: {today_file_path}")  # Debug
             
-            shutil.copy2(most_recent_file, today_file_path)
+            shutil.copy2(base_status_file, today_file_path)
             print(f"File copied successfully")  # Debug
             
             # Step 6: Update the file with new status
             # Create inventory-only data for the existing functionality
             spu_inventory_only = {spu_id: data['inventory'] for spu_id, data in spu_inventory_data.items()}
             success, error = update_product_status_file(
-                most_recent_file, 
+                base_status_file, 
                 today_file_path, 
                 spu_inventory_only, 
                 spu_to_product_mapping
@@ -340,8 +353,9 @@ def upload_file():
             else:
                 print(f"Price template Excel created successfully: {price_template_path}")  # Debug
             
-            # Clean up uploaded file
-            os.remove(file_path)
+            # Clean up uploaded files
+            os.remove(inventory_file_path)
+            os.remove(status_file_path)
             
             # Store file paths in session for download
             from flask import session
@@ -358,9 +372,11 @@ def upload_file():
             print(f"Unexpected error: {str(e)}")  # Debug
             import traceback
             traceback.print_exc()  # Debug
-            # Clean up uploaded file if it exists
-            if os.path.exists(file_path):
-                os.remove(file_path)
+            # Clean up uploaded files if they exist
+            if os.path.exists(inventory_file_path):
+                os.remove(inventory_file_path)
+            if os.path.exists(status_file_path):
+                os.remove(status_file_path)
             flash(f'Unexpected error: {str(e)}')
             return redirect(url_for('index'))
     

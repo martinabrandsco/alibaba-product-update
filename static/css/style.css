@@ -586,3 +586,35 @@ body {
     }
 }
 
+/* Upload Steps */
+.upload-step {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    border: 2px solid #f3f4f6;
+    border-radius: 8px;
+    background: #fafafa;
+}
+
+.upload-step:last-child {
+    margin-bottom: 0;
+}
+
+.upload-step h3 {
+    color: #374151;
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.upload-step p {
+    color: #6b7280;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+    .upload-step {
+        padding: 1rem;
+    }
+}
+

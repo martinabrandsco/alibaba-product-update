@@ -13,43 +13,89 @@ function initializeApp() {
 
 // File Upload Functionality
 function setupFileUpload() {
-    const fileInput = document.getElementById('fileInput');
+    const fileInput1 = document.getElementById('fileInput1');
+    const fileInput2 = document.getElementById('fileInput2');
     const uploadBtn = document.getElementById('uploadBtn');
     const uploadForm = document.getElementById('uploadForm');
-    const fileInputLabel = document.querySelector('.file-input-label');
-    const fileInputText = document.querySelector('.file-input-text');
-    const fileInputHint = document.querySelector('.file-input-hint');
+    
+    // Track which files are selected
+    let inventoryFileSelected = false;
+    let statusFileSelected = false;
 
-    // File input change handler
-    fileInput.addEventListener('change', function(e) {
+    // File input change handlers
+    fileInput1.addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (file) {
-            // Validate file type
-            if (!file.name.toLowerCase().endsWith('.csv')) {
-                showFlashMessage('Please select a CSV file.', 'error');
-                fileInput.value = '';
-                return;
+            if (validateFile(file, 'inventory')) {
+                updateFileDisplay(fileInput1, file);
+                inventoryFileSelected = true;
+                checkBothFilesSelected();
+                showFlashMessage('Inventory file selected successfully!', 'success');
             }
-
-            // Validate file size (10MB limit)
-            if (file.size > 10 * 1024 * 1024) {
-                showFlashMessage('File size must be less than 10MB.', 'error');
-                fileInput.value = '';
-                return;
-            }
-
-            // Update UI
-            fileInputText.textContent = file.name;
-            fileInputHint.textContent = `${(file.size / 1024 / 1024).toFixed(2)} MB`;
-            uploadBtn.disabled = false;
-            
-            showFlashMessage('File selected successfully!', 'success');
         } else {
-            fileInputText.textContent = 'Choose CSV File';
-            fileInputHint.textContent = 'or drag and drop here';
-            uploadBtn.disabled = true;
+            resetFileDisplay(fileInput1);
+            inventoryFileSelected = false;
+            checkBothFilesSelected();
         }
     });
+
+    fileInput2.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            if (validateFile(file, 'status')) {
+                updateFileDisplay(fileInput2, file);
+                statusFileSelected = true;
+                checkBothFilesSelected();
+                showFlashMessage('Product status file selected successfully!', 'success');
+            }
+        } else {
+            resetFileDisplay(fileInput2);
+            statusFileSelected = false;
+            checkBothFilesSelected();
+        }
+    });
+
+    function validateFile(file, type) {
+        // Validate file type
+        if (!file.name.toLowerCase().endsWith('.csv')) {
+            showFlashMessage(`Please select a CSV file for ${type}.`, 'error');
+            return false;
+        }
+
+        // Validate file size (10MB limit)
+        if (file.size > 10 * 1024 * 1024) {
+            showFlashMessage(`File size must be less than 10MB for ${type}.`, 'error');
+            return false;
+        }
+
+        return true;
+    }
+
+    function updateFileDisplay(input, file) {
+        const label = input.nextElementSibling;
+        const text = label.querySelector('.file-input-text');
+        const hint = label.querySelector('.file-input-hint');
+        
+        text.textContent = file.name;
+        hint.textContent = `${(file.size / 1024 / 1024).toFixed(2)} MB`;
+    }
+
+    function resetFileDisplay(input) {
+        const label = input.nextElementSibling;
+        const text = label.querySelector('.file-input-text');
+        const hint = label.querySelector('.file-input-hint');
+        
+        if (input.id === 'fileInput1') {
+            text.textContent = 'Choose Inventory CSV File';
+        } else {
+            text.textContent = 'Choose Product Status CSV File';
+        }
+        hint.textContent = 'or drag and drop here';
+    }
+
+    function checkBothFilesSelected() {
+        uploadBtn.disabled = !(inventoryFileSelected && statusFileSelected);
+    }
 
     // Drag and drop functionality
     fileInputLabel.addEventListener('dragover', function(e) {
@@ -80,18 +126,21 @@ function setupFileUpload() {
     uploadForm.addEventListener('submit', function(e) {
         e.preventDefault();
         
-        const file = fileInput.files[0];
-        if (!file) {
-            showFlashMessage('Please select a file first.', 'error');
+        const inventoryFile = fileInput1.files[0];
+        const statusFile = fileInput2.files[0];
+        
+        if (!inventoryFile || !statusFile) {
+            showFlashMessage('Please select both files first.', 'error');
             return;
         }
 
         // Show loading state
         showLoadingState();
         
-        // Use fetch to upload file
+        // Use fetch to upload both files
         const formData = new FormData();
-        formData.append('file', file);
+        formData.append('inventory_file', inventoryFile);
+        formData.append('status_file', statusFile);
         
         fetch('/upload', {
             method: 'POST',
@@ -117,7 +166,7 @@ function setupFileUpload() {
         })
         .catch(error => {
             console.error('Error:', error);
-            showFlashMessage('An error occurred while processing the file.', 'error');
+            showFlashMessage('An error occurred while processing the files.', 'error');
             hideLoadingState();
         });
     });
